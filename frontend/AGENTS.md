@@ -4,13 +4,28 @@ Next.js Kanban board. Built as a static export and served by the backend at `/`.
 
 ## Stack
 
-- Next.js (App Router, TypeScript)
-- React 19
+- Next.js 16.1.6 (App Router, TypeScript) with `output: 'export'` for a static build.
+- React 19.2.3
 - Tailwind CSS 4 (via `@tailwindcss/postcss`)
 - `@dnd-kit/core`, `@dnd-kit/sortable` for drag and drop
 - Vitest + Testing Library for unit tests (jsdom environment)
 - Playwright for E2E tests
 - ESLint with `eslint-config-next`
+- Fonts: `Space Grotesk` (display) and `Manrope` (body) via `next/font/google`. The Google Fonts download happens at build time, so the Docker builder needs network access during `npm run build`.
+
+## Color scheme
+
+CSS variables in [src/app/globals.css](src/app/globals.css), matching the spec in [AGENTS.md](../AGENTS.md):
+
+| Variable | Hex | Role |
+| --- | --- | --- |
+| `--accent-green` | `#22c55e` | accent lines, highlights |
+| `--primary-indigo` | `#4f46e5` | links, key sections |
+| `--secondary-cyan` | `#06b6d4` | submit buttons, important actions |
+| `--dark-slate` | `#1e293b` | main headings, primary text |
+| `--gray-text` | `#64748b` | supporting text, labels |
+
+Inline gradients and shadows (e.g. on `KanbanBoard.tsx`) use direct rgba values that mirror these hexes.
 
 ## Directory layout
 
@@ -19,7 +34,7 @@ src/
   app/
     layout.tsx        # Root layout, font setup, metadata
     page.tsx          # Home page, renders <KanbanBoard />
-    globals.css       # Tailwind import + global styles
+    globals.css       # Tailwind import + CSS variables + base styles
   components/
     KanbanBoard.tsx           # Top-level board, owns state and DnD context
     KanbanBoard.test.tsx      # Unit tests for board behavior
@@ -74,17 +89,20 @@ Tests rely on these `data-testid` attributes — keep them stable:
 - Unit: `npm run test:unit` (Vitest).
   - `kanban.test.ts` covers `moveCard` (same-column reorder, cross-column move, drop to empty column).
   - `KanbanBoard.test.tsx` covers rendering 5 columns, renaming, and add+delete card.
-- E2E: `npm run test:e2e` (Playwright against `npm run dev`). Loads the board, adds a card, and drags a card between columns.
+- E2E: `npm run test:e2e` (Playwright against `npm run dev` on port 3100).
+  - Loads the board, asserts 5 columns.
+  - Adds a card via the in-column form.
+  - Drags card `card-1` into `col-review` using mouse simulation.
+
+Port 3100 was chosen to avoid conflicts with other Next.js dev servers that may already be running locally (e.g. on port 3000).
 
 ## Dev and build
 
-- Dev: `npm run dev` (Next dev server, default port 3000).
+- Dev: `npm run dev` (Next dev server, defaults to port 3000; E2E config uses 3100).
 - Build: `npm run build` — produces `frontend/out/` as the static export.
-- Start: `npm run start` (production server; not used by the Docker setup).
+- Start: `npm run start` (production server; not used by the Docker setup, which serves `out/` via FastAPI).
 - Lint: `npm run lint`
 
-## Known discrepancies
+## Integration with the backend
 
-- The current frontend uses its own color palette (yellow / blue / purple), which differs from the spec at the project root (green / indigo / cyan). The color scheme will be migrated in Part 3.
-- No static export is configured yet — `next.config.ts` still defaults to an SSR build. Static export is added in Part 3.
-- No backend serving: today the dev server is the only way to run the frontend. The backend + multi-stage Docker build is added in Part 3.
+The frontend is built into `frontend/out/` and mounted at `/` by the FastAPI app via `StaticFiles(html=True)`. The Dockerfile performs this in two stages: a `node:22-slim` builder that runs `npm run build`, and a `python:3.13-slim` final image that copies `out/` to `/app/static`. API requests (currently only `/api/health`) take precedence over the static mount.

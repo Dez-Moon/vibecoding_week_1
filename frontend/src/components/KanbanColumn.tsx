@@ -27,14 +27,14 @@ export const KanbanColumn = ({
       ref={setNodeRef}
       className={clsx(
         "flex min-h-[520px] flex-col rounded-3xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-4 shadow-[var(--shadow)] transition",
-        isOver && "ring-2 ring-[var(--accent-yellow)]"
+        isOver && "ring-2 ring-[var(--accent-green)]"
       )}
       data-testid={`column-${column.id}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="w-full">
           <div className="flex items-center gap-3">
-            <div className="h-2 w-10 rounded-full bg-[var(--accent-yellow)]" />
+            <div className="h-2 w-10 rounded-full bg-[var(--accent-green)]" />
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
               {cards.length} cards
             </span>
@@ -42,7 +42,7 @@ export const KanbanColumn = ({
           <input
             value={column.title}
             onChange={(event) => onRename(column.id, event.target.value)}
-            className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none"
+            className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-[var(--dark-slate)] outline-none"
             aria-label="Column title"
           />
         </div>

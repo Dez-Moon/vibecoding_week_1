@@ -16,4 +16,4 @@ scripts\start.bat
 scripts\stop.bat
 ```
 
-Both run the container named `pm-app`, exposing it on host port 8000. The stop script no-ops if the container isn't running.
+Both run the container named `pm-app`, exposing it on host port 8000. The start script is idempotent for builds (re-runs are fine; it always rebuilds before running). The stop script no-ops if the container isn't running.
