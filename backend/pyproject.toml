@@ -5,6 +5,7 @@ description = "Project Management backend"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115",
+    "itsdangerous>=2.2",
     "uvicorn[standard]>=0.30",
 ]
 

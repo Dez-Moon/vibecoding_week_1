@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
@@ -13,9 +14,12 @@ import {
 } from "@dnd-kit/core";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
+import { useCurrentUser } from "@/components/AuthGate";
+import { logout } from "@/lib/auth";
 import { createId, initialData, moveCard, type BoardData } from "@/lib/kanban";
 
 export const KanbanBoard = () => {
+  const { username } = useCurrentUser() ?? {};
   const [board, setBoard] = useState<BoardData>(() => initialData);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
@@ -111,13 +115,24 @@ export const KanbanBoard = () => {
                 and capture quick notes without getting buried in settings.
               </p>
             </div>
-            <div className="rounded-2xl border border-[var(--stroke)] bg-[var(--surface)] px-5 py-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--gray-text)]">
-                Focus
-              </p>
-              <p className="mt-2 text-lg font-semibold text-[var(--primary-indigo)]">
-                One board. Five columns. Zero clutter.
-              </p>
+            <div className="flex flex-col items-end gap-3">
+              {username ? (
+                <p
+                  data-testid="current-user"
+                  className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--gray-text)]"
+                >
+                  Signed in as <span className="text-[var(--primary-indigo)]">{username}</span>
+                </p>
+              ) : null}
+              <div className="rounded-2xl border border-[var(--stroke)] bg-[var(--surface)] px-5 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--gray-text)]">
+                  Focus
+                </p>
+                <p className="mt-2 text-lg font-semibold text-[var(--primary-indigo)]">
+                  One board. Five columns. Zero clutter.
+                </p>
+              </div>
+              {username ? <LogoutButton /> : null}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -161,5 +176,23 @@ export const KanbanBoard = () => {
         </DndContext>
       </main>
     </div>
+  );
+};
+
+const LogoutButton = () => {
+  const router = useRouter();
+  const handleClick = async () => {
+    await logout();
+    router.push("/login");
+  };
+  return (
+    <button
+      data-testid="logout-button"
+      type="button"
+      onClick={handleClick}
+      className="rounded-lg border border-[var(--stroke)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--dark-slate)] transition hover:border-[var(--primary-indigo)] hover:text-[var(--primary-indigo)]"
+    >
+      Sign out
+    </button>
   );
 };

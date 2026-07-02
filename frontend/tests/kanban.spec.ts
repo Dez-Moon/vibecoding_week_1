@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ page, context }) => {
+  await context.clearCookies();
+  await page.goto("/login");
+  await page.getByTestId("input-username").fill("user");
+  await page.getByTestId("input-password").fill("password");
+  await page.getByTestId("submit-login").click();
+  await page.waitForURL(/\/?$/);
+});
+
 test("loads the kanban board", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
