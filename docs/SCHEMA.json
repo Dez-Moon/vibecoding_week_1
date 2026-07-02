@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project Management MVP schema",
+  "description": "Logical schema for the SQLite database. Maps 1:1 to SQLAlchemy models in backend/app/models.py.",
+  "type": "object",
+  "tables": {
+    "User": {
+      "fields": {
+        "id": { "type": "string", "format": "uuid", "primary_key": true },
+        "username": { "type": "string", "unique": true, "required": true },
+        "created_at": { "type": "string", "format": "date-time", "required": true }
+      }
+    },
+    "Board": {
+      "fields": {
+        "id": { "type": "string", "format": "uuid", "primary_key": true },
+        "user_id": {
+          "type": "string",
+          "format": "uuid",
+          "foreign_key": "User.id",
+          "unique": true,
+          "required": true
+        },
+        "title": { "type": "string", "required": true },
+        "created_at": { "type": "string", "format": "date-time", "required": true }
+      },
+      "constraints": [
+        "UNIQUE (user_id) — one board per user for the MVP"
+      ]
+    },
+    "Column": {
+      "fields": {
+        "id": { "type": "string", "format": "uuid", "primary_key": true },
+        "board_id": {
+          "type": "string",
+          "format": "uuid",
+          "foreign_key": "Board.id",
+          "required": true,
+          "index": true
+        },
+        "title": { "type": "string", "required": true },
+        "position": { "type": "integer", "required": true, "minimum": 0 },
+        "created_at": { "type": "string", "format": "date-time", "required": true }
+      },
+      "constraints": [
+        "UNIQUE (board_id, position) — no two columns in the same board share a slot"
+      ]
+    },
+    "Card": {
+      "fields": {
+        "id": { "type": "string", "format": "uuid", "primary_key": true },
+        "column_id": {
+          "type": "string",
+          "format": "uuid",
+          "foreign_key": "Column.id",
+          "required": true,
+          "index": true
+        },
+        "title": { "type": "string", "required": true },
+        "details": { "type": "string", "default": "" },
+        "position": { "type": "integer", "required": true, "minimum": 0 },
+        "created_at": { "type": "string", "format": "date-time", "required": true },
+        "updated_at": { "type": "string", "format": "date-time", "required": true }
+      },
+      "constraints": [
+        "UNIQUE (column_id, position) — no two cards in the same column share a slot"
+      ]
+    }
+  },
+  "relationships": [
+    { "from": "Board.user_id", "to": "User.id", "cardinality": "many-to-one" },
+    { "from": "Column.board_id", "to": "Board.id", "cardinality": "many-to-one" },
+    { "from": "Card.column_id", "to": "Column.id", "cardinality": "many-to-one" }
+  ]
+}

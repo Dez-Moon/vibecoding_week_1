@@ -10,6 +10,7 @@ FastAPI backend, packaged with uv, served from a Docker container. This file doc
 - Host port: 8000
 - Container name: `pm-app`
 - Image tag: `pm-app`
+- Database: SQLite via SQLAlchemy 2.x (sync). Default `DATABASE_URL=sqlite:///./data/pm.db`. Schema is in [docs/SCHEMA.json](../docs/SCHEMA.json) and rationale in [docs/DATABASE.md](../docs/DATABASE.md).
 
 ## Layout
 

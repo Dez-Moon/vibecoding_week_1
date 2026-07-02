@@ -130,13 +130,13 @@ Cross-cutting rules:
 
 > **Pause for user sign-off before continuing to Part 6.**
 
-- [ ] Choose ORM. Recommendation: **SQLAlchemy 2.x (sync)** for simplicity with SQLite + FastAPI. Document the choice in `backend/AGENTS.md`.
-- [ ] Design schema in `docs/SCHEMA.json` (machine-readable) with these tables and key fields:
+- [x] Choose ORM. Recommendation: **SQLAlchemy 2.x (sync)** for simplicity with SQLite + FastAPI. Document the choice in `backend/AGENTS.md`.
+- [x] Design schema in `docs/SCHEMA.json` (machine-readable) with these tables and key fields:
   - `User`: `id` (pk), `username` (unique), `created_at`.
   - `Board`: `id` (pk), `user_id` (fk User), `title`, `created_at`. Unique constraint on `user_id` (one board per user for the MVP).
   - `Column`: `id` (pk), `board_id` (fk Board), `title`, `position` (int), `created_at`.
   - `Card`: `id` (pk), `column_id` (fk Column), `title`, `details`, `position` (int), `created_at`, `updated_at`.
-- [ ] Document the schema in `docs/DATABASE.md`:
+- [x] Document the schema in `docs/DATABASE.md`:
   - ER description (text or mermaid).
   - Rationale per table.
   - How `position` orders items within a column (sparse integers optional; tight array on write is simplest for the MVP).
