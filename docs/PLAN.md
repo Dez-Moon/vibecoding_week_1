@@ -304,26 +304,26 @@ Cross-cutting rules:
 
 ## Part 10: AI chat UI
 
-- [ ] Build chat UI:
+- [x] Build chat UI:
   - `src/components/ChatSidebar.tsx` — collapsible sidebar; controlled by parent.
   - `src/components/ChatMessage.tsx` — message bubble (user vs AI).
   - `src/components/ChatInput.tsx` — textarea + send button.
   - `src/lib/chat.ts` — typed client for `POST /api/ai/chat`; local state for message history.
-- [ ] Add a chat toggle button to the Kanban board header.
-- [ ] Wire up:
+- [x] Add a chat toggle button to the Kanban board header.
+- [x] Wire up:
   - On send, POST to `/api/ai/chat` with the current message and history.
   - Append user + AI messages to local history.
   - If the response includes `board_update`, refresh the Kanban state (call `getBoard()` again, or merge locally — pick the simpler option).
   - Show a typing indicator while waiting.
   - Show inline errors on failure.
-- [ ] Tests:
+- [x] Tests:
   - Frontend unit: `ChatInput` submits, `ChatMessage` renders, sidebar open/close state.
   - Frontend E2E (Playwright): open chat → send "create a card titled E2E card in Backlog" → AI responds → board shows the new card.
 
 **Tests:** see substeps above.
 
 **Success criteria:**
-- A polished, responsive sidebar chat widget is present.
-- The AI can update the Kanban via chat.
-- The board refreshes automatically when the AI changes it.
-- All tests pass.
+- [x] A polished, responsive sidebar chat widget is present.
+- [x] The AI can update the Kanban via chat.
+- [x] The board refreshes automatically when the AI changes it.
+- [x] All tests pass.

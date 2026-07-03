@@ -16,6 +16,7 @@ import {
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
 import { useCurrentUser } from "@/components/AuthGate";
+import { ChatSidebar } from "@/components/ChatSidebar";
 import { logout } from "@/lib/auth";
 import {
   createCard as apiCreateCard,
@@ -27,6 +28,22 @@ import {
   type BoardApiColumn,
 } from "@/lib/board";
 import { moveCard } from "@/lib/kanban";
+
+export function apiToBoard(
+  apiColumns: BoardApiColumn[],
+  apiCards: Record<string, BoardApiCard>
+): KanbanBoardData {
+  return {
+    columns: apiColumns.map((c) => ({
+      id: c.id,
+      title: c.title,
+      cardIds: c.card_ids,
+    })),
+    cards: Object.fromEntries(
+      Object.entries(apiCards).map(([id, c]) => [id, { id, title: c.title, details: c.details }])
+    ),
+  };
+}
 
 type KanbanCard = {
   id: string;
@@ -45,22 +62,6 @@ type KanbanBoardData = {
   cards: Record<string, KanbanCard>;
 };
 
-function apiToBoard(
-  apiColumns: BoardApiColumn[],
-  apiCards: Record<string, BoardApiCard>
-): KanbanBoardData {
-  return {
-    columns: apiColumns.map((c) => ({
-      id: c.id,
-      title: c.title,
-      cardIds: c.card_ids,
-    })),
-    cards: Object.fromEntries(
-      Object.entries(apiCards).map(([id, c]) => [id, { id, title: c.title, details: c.details }])
-    ),
-  };
-}
-
 export const KanbanBoard = () => {
   const { username } = useCurrentUser() ?? {};
 
@@ -69,6 +70,7 @@ export const KanbanBoard = () => {
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
@@ -311,6 +313,15 @@ export const KanbanBoard = () => {
                 </p>
               </div>
               {username ? <LogoutButton /> : null}
+              <button
+                onClick={() => setIsChatOpen(true)}
+                className="flex items-center gap-2 rounded-xl bg-[var(--primary-indigo)] px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                AI Chat
+              </button>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
@@ -354,6 +365,16 @@ export const KanbanBoard = () => {
           </DragOverlay>
         </DndContext>
       </main>
+
+      <ChatSidebar
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        onBoardRefresh={() => {
+          getBoard()
+            .then((data) => setBoard(apiToBoard(data.columns, data.cards)))
+            .catch(() => setError("Failed to refresh board."));
+        }}
+      />
     </div>
   );
 };
