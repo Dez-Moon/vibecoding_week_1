@@ -1,6 +1,7 @@
 import os
 from collections.abc import Iterator
 from pathlib import Path
+from threading import Lock
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -8,6 +9,12 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent / "data" / "pm.db"
 DEFAULT_URL = f"sqlite:///{DEFAULT_DB_PATH}"
+
+# Protected by a lock so concurrent fixture calls (unlikely, but safe) don't
+# race during reconfiguration.
+_lock = Lock()
+_engine: Engine | None = None
+_SessionLocal: sessionmaker[Session] | None = None
 
 
 def _resolve_url() -> str:
@@ -18,8 +25,7 @@ def _ensure_data_dir(url: str) -> None:
     if not url.startswith("sqlite:///"):
         return
     db_path = url.removeprefix("sqlite:///")
-    parent = Path(db_path).parent
-    parent.mkdir(parents=True, exist_ok=True)
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
 
 def _build_engine(url: str) -> Engine:
@@ -27,8 +33,17 @@ def _build_engine(url: str) -> Engine:
     return create_engine(url, future=True, echo=False)
 
 
-engine: Engine = _build_engine(_resolve_url())
-SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+def _get_engine() -> Engine:
+    if _engine is None:
+        url = _resolve_url()
+        configure(url)
+    return _engine  # type: ignore[return-value]
+
+
+def get_session_factory() -> sessionmaker[Session]:
+    if _SessionLocal is None:
+        _get_engine()
+    return _SessionLocal  # type: ignore[return-value]
 
 
 class Base(DeclarativeBase):
@@ -46,13 +61,24 @@ def configure(url: str) -> None:
     Used by tests to point at an ephemeral SQLite file. Idempotent: safe
     to call multiple times.
     """
-    global engine, SessionLocal
-    engine = _build_engine(url)
-    SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    global _engine, _SessionLocal
+    with _lock:
+        _engine = _build_engine(url)
+        _SessionLocal = sessionmaker(bind=_engine, autoflush=False, expire_on_commit=False)
+
+
+def _get_engine() -> Engine:
+    global _engine, _SessionLocal
+    with _lock:
+        if _engine is None:
+            url = _resolve_url()
+            _engine = _build_engine(url)
+            _SessionLocal = sessionmaker(bind=_engine, autoflush=False, expire_on_commit=False)
+        return _engine
 
 
 def get_db() -> Iterator[Session]:
-    db = SessionLocal()
+    db = get_session_factory()()
     try:
         yield db
     finally:
@@ -62,4 +88,4 @@ def get_db() -> Iterator[Session]:
 def init_db() -> None:
     # Models are imported at module load time, so Base.metadata is
     # already populated. Just issue the CREATE TABLE statements.
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=_get_engine())

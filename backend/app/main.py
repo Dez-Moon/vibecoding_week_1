@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app import board, database, schemas
 from app.services.ai import call_ai
+from app.services.chat import apply_operations, build_system_prompt
 from app.auth import (
     clear_session_cookie,
     create_session_cookie,
@@ -42,7 +43,7 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
     @app.on_event("startup")
     def _startup() -> None:
         database.init_db()
-        with database.SessionLocal() as db:
+        with database.get_session_factory()() as db:
             seed_if_empty(db)
 
     @app.get("/api/health")
@@ -145,6 +146,51 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         messages = [{"role": "user", "content": "What is 2+2?"}]
         response = call_ai(messages)
         return {"response": response}
+
+    @app.post("/api/ai/chat")
+    def ai_chat(
+        payload: schemas.AIChatRequest,
+        username: str = Depends(get_current_user),
+        db: Session = Depends(database.get_db),
+    ) -> schemas.AIChatResponse:
+        board_data = board.get_board(db, username)
+        if board_data is None:
+            raise HTTPException(status_code=404, detail="board not found")
+
+        messages = [{"role": "system", "content": build_system_prompt(username, board_data)}]
+        if payload.conversation_history:
+            messages.extend([m.model_dump() for m in payload.conversation_history])
+        messages.append({"role": "user", "content": payload.message})
+
+        ai_response = call_ai(messages)
+
+        import json
+        try:
+            parsed = json.loads(ai_response)
+            update = schemas.BoardUpdate.model_validate(parsed.get("board_update") or {})
+        except (json.JSONDecodeError, ValueError):
+            return schemas.AIChatResponse(
+                response=ai_response,
+                board_update=None,
+                board=board_data,
+            )
+
+        if update.operations:
+            try:
+                apply_operations(db, board_data, update)
+            except ValueError:
+                return schemas.AIChatResponse(
+                    response=ai_response,
+                    board_update=None,
+                    board=board_data,
+                )
+
+        board_data = board.get_board(db, username)
+        return schemas.AIChatResponse(
+            response=parsed.get("response", ai_response),
+            board_update=update if update.operations else None,
+            board=board_data,
+        )
 
     sd = static_dir if static_dir is not None else STATIC_DIR
     if sd.is_dir():

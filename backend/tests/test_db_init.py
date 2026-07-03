@@ -22,7 +22,7 @@ def test_db_init_creates_file_when_missing(db):
 
 def test_db_init_creates_expected_tables(db):
     database.init_db()
-    inspector = inspect(database.engine)
+    inspector = inspect(database._get_engine())
     table_names = set(inspector.get_table_names())
     assert {"users", "boards", "columns", "cards"}.issubset(table_names)
 
@@ -31,9 +31,9 @@ def test_seed_creates_demo_workspace(db):
     from app.seed import DEFAULT_COLUMNS, seed_if_empty
 
     database.init_db()
-    with database.SessionLocal() as session:
+    with database.get_session_factory()() as session:
         seed_if_empty(session)
-    with database.SessionLocal() as session:
+    with database.get_session_factory()() as session:
         users = session.query(database.models.User).all()
         assert len(users) == 1
         assert users[0].username == "user"
@@ -48,14 +48,14 @@ def test_seed_is_idempotent(db):
     from app.seed import seed_if_empty
 
     database.init_db()
-    with database.SessionLocal() as session:
+    with database.get_session_factory()() as session:
         seed_if_empty(session)
-    with database.SessionLocal() as session:
+    with database.get_session_factory()() as session:
         first_count = session.query(database.models.User).count()
         assert first_count == 1
 
-    with database.SessionLocal() as session:
+    with database.get_session_factory()() as session:
         seed_if_empty(session)
-    with database.SessionLocal() as session:
+    with database.get_session_factory()() as session:
         second_count = session.query(database.models.User).count()
         assert second_count == 1

@@ -264,7 +264,7 @@ Cross-cutting rules:
 
 ## Part 9: AI with Kanban context
 
-- [ ] Define request/response schemas in `backend/app/schemas.py`:
+- [x] Define request/response schemas in `backend/app/schemas.py`:
   - Request: `AIChatRequest { message: str, conversation_history: list[Message] | None }`.
   - Response: `AIChatResponse { response: str, board_update: BoardUpdate | None, board: BoardData }`.
   - `BoardUpdate.operations: list[Operation]` where `Operation` is a tagged union:
@@ -274,7 +274,7 @@ Cross-cutting rules:
     - `move_card { card_id: str, column_id: str, position: int }`.
     - `rename_column { column_id: str, title: str }`.
   - Validate with Pydantic discriminated union.
-- [ ] Implement `POST /api/ai/chat`:
+- [x] Implement `POST /api/ai/chat`:
   - Require auth.
   - Load the current board for the user.
   - Build system prompt containing: the user's role, the current board JSON, the operations schema, and instructions ("respond with JSON matching this schema").
@@ -284,7 +284,7 @@ Cross-cutting rules:
     - For each operation, perform the corresponding DB action.
     - Validate preconditions (card exists, column exists, belongs to the user) and reject the whole update if any op is invalid.
   - Return `{response, board_update, board}` (latest board state).
-- [ ] Tests:
+- [x] Tests:
   - Unit: mock `call_ai` to return chat-only response → no DB writes, response returned.
   - Unit: mock to return a valid `create_card` op → card created with correct column/position.
   - Unit: mock to return an invalid op (e.g., unknown `card_id`) → entire update rejected, no DB writes.
@@ -294,9 +294,10 @@ Cross-cutting rules:
 **Tests:** see substeps above.
 
 **Success criteria:**
-- AI can answer questions about the board without mutating it.
-- AI can mutate the board via structured output; mutations are validated and applied atomically.
-- Conversation history is threaded across calls.
+- [x] AI can answer questions about the board without mutating it.
+- [x] AI can mutate the board via structured output; mutations are validated and applied atomically.
+- [x] Conversation history is threaded across calls.
+- [x] All tests pass.
 - All tests pass.
 
 ---

@@ -1,6 +1,65 @@
 from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
+from typing import Annotated, Literal
+
+
+class Message(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class AIChatRequest(BaseModel):
+    message: str
+    conversation_history: list[Message] | None = None
+
+
+class OperationCreateCard(BaseModel):
+    op: Literal["create_card"] = "create_card"
+    column_id: str
+    title: str
+    details: str = ""
+
+
+class OperationUpdateCard(BaseModel):
+    op: Literal["update_card"] = "update_card"
+    card_id: str
+    title: str | None = None
+    details: str | None = None
+
+
+class OperationDeleteCard(BaseModel):
+    op: Literal["delete_card"] = "delete_card"
+    card_id: str
+
+
+class OperationMoveCard(BaseModel):
+    op: Literal["move_card"] = "move_card"
+    card_id: str
+    column_id: str
+    position: int
+
+
+class OperationRenameColumn(BaseModel):
+    op: Literal["rename_column"] = "rename_column"
+    column_id: str
+    title: str
+
+
+Operation = Annotated[
+    OperationCreateCard | OperationUpdateCard | OperationDeleteCard | OperationMoveCard | OperationRenameColumn,
+    Field(discriminator="op"),
+]
+
+
+class BoardUpdate(BaseModel):
+    operations: list[Operation] = []
+
+
+class AIChatResponse(BaseModel):
+    response: str
+    board_update: BoardUpdate | None = None
+    board: BoardOut
 
 
 class CardOut(BaseModel):

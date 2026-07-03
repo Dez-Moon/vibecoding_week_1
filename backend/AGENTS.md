@@ -29,6 +29,7 @@ backend/
     services/
       __init__.py
       ai.py            # OpenRouter AI client, call_ai(), model constants
+      chat.py          # AI chat service, apply_operations(), build_system_prompt()
     __init__.py
   tests/
     __init__.py

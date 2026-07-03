@@ -17,11 +17,18 @@ from app.seed import DEMO_USERNAME, seed_if_empty
 def db_url(tmp_path) -> Iterator[str]:
     url = f"sqlite:///{tmp_path / 'pm.db'}"
     database.configure(url)
+    # Explicitly initialize DB + seed since TestClient startup events
+    # behave unpredictably with pytest's anyio event loop.
+    database.init_db()
+    with database.get_session_factory()() as db:
+        seed_if_empty(db)
     yield url
 
 
 @pytest.fixture
-def app(db_url):
+def app(db_url):  # noqa: F811
+    # db_url must be a parameter here so it runs first and configures the DB
+    # before the database module is imported by create_app().
     return create_app(static_dir=None)
 
 
