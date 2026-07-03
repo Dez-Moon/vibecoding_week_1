@@ -1,23 +1,25 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Project Management MVP schema",
-  "description": "Logical schema for the SQLite database. Maps 1:1 to SQLAlchemy models in backend/app/models.py.",
+  "description": "Logical schema for the SQLite database. SQL table names are plural; SQLAlchemy class names are singular. Maps 1:1 to backend/app/models.py.",
   "type": "object",
   "tables": {
-    "User": {
+    "users": {
+      "model": "User",
       "fields": {
         "id": { "type": "string", "format": "uuid", "primary_key": true },
         "username": { "type": "string", "unique": true, "required": true },
         "created_at": { "type": "string", "format": "date-time", "required": true }
       }
     },
-    "Board": {
+    "boards": {
+      "model": "Board",
       "fields": {
         "id": { "type": "string", "format": "uuid", "primary_key": true },
         "user_id": {
           "type": "string",
           "format": "uuid",
-          "foreign_key": "User.id",
+          "foreign_key": "users.id",
           "unique": true,
           "required": true
         },
@@ -28,13 +30,14 @@
         "UNIQUE (user_id) — one board per user for the MVP"
       ]
     },
-    "Column": {
+    "columns": {
+      "model": "Column",
       "fields": {
         "id": { "type": "string", "format": "uuid", "primary_key": true },
         "board_id": {
           "type": "string",
           "format": "uuid",
-          "foreign_key": "Board.id",
+          "foreign_key": "boards.id",
           "required": true,
           "index": true
         },
@@ -46,13 +49,14 @@
         "UNIQUE (board_id, position) — no two columns in the same board share a slot"
       ]
     },
-    "Card": {
+    "cards": {
+      "model": "Card",
       "fields": {
         "id": { "type": "string", "format": "uuid", "primary_key": true },
         "column_id": {
           "type": "string",
           "format": "uuid",
-          "foreign_key": "Column.id",
+          "foreign_key": "columns.id",
           "required": true,
           "index": true
         },
@@ -68,8 +72,8 @@
     }
   },
   "relationships": [
-    { "from": "Board.user_id", "to": "User.id", "cardinality": "many-to-one" },
-    { "from": "Column.board_id", "to": "Board.id", "cardinality": "many-to-one" },
-    { "from": "Card.column_id", "to": "Column.id", "cardinality": "many-to-one" }
+    { "from": "boards.user_id", "to": "users.id", "cardinality": "many-to-one" },
+    { "from": "columns.board_id", "to": "boards.id", "cardinality": "many-to-one" },
+    { "from": "cards.column_id", "to": "columns.id", "cardinality": "many-to-one" }
   ]
 }
