@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import board, database, schemas
+from app.services.ai import call_ai
 from app.auth import (
     clear_session_cookie,
     create_session_cookie,
@@ -138,6 +139,12 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         except LookupError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         return schemas.CardOut.model_validate(card).model_dump()
+
+    @app.post("/api/ai/test")
+    def ai_test() -> dict[str, str]:
+        messages = [{"role": "user", "content": "What is 2+2?"}]
+        response = call_ai(messages)
+        return {"response": response}
 
     sd = static_dir if static_dir is not None else STATIC_DIR
     if sd.is_dir():

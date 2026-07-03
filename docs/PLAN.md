@@ -231,6 +231,10 @@ Cross-cutting rules:
 
 > **Pause for user sign-off before continuing to Part 9.**
 
+**User decisions:**
+- Docker `scripts/start.sh` will pass `--env-file .env` so the container picks up `.env` for local runs.
+- `.env` created with `OPENROUTER_API_KEY=sk-or-v1-e9fff...` (placeholder key; replace with real key for actual AI calls).
+
 - [ ] Add `openai>=1.x` to backend deps (OpenRouter is OpenAI-compatible).
 - [ ] Document required env in `backend/AGENTS.md`:
   - `OPENROUTER_API_KEY` — required at runtime.

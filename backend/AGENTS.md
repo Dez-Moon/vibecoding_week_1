@@ -26,6 +26,9 @@ backend/
     schemas.py          # Pydantic request/response DTOs
     board.py           # Board CRUD endpoints (columns, cards, move)
     seed.py            # Demo data seeding (user, board, columns, cards)
+    services/
+      __init__.py
+      ai.py            # OpenRouter AI client, call_ai(), model constants
     __init__.py
   tests/
     __init__.py
@@ -59,6 +62,14 @@ uv run pytest
 ## Run in Docker
 
 Use the `scripts/` directory: `bash scripts/start.sh` builds the image and runs the container detached, mapping host port 8000 to container port 8000. `bash scripts/stop.sh` stops and removes it.
+
+## AI Service
+
+- Uses OpenRouter API (`openai>=1.x` with OpenAI-compatible client).
+- `OPENROUTER_API_KEY` env var required at runtime (loaded from `.env` for local, passed via `--env-file` in Docker).
+- `PRIMARY_MODEL = "openai/gpt-oss-120b"`, `FALLBACK_MODEL = "openai/gpt-oss-20b"`.
+- `call_ai(messages)` tries primary model; on any exception, retries with fallback.
+- API key loaded from env, never hardcoded.
 
 ## Session strategy
 

@@ -12,7 +12,7 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
 fi
 
 docker build -t "$IMAGE_NAME" .
-docker run -d --name "$CONTAINER_NAME" -p "${HOST_PORT}:8000" "$IMAGE_NAME"
+docker run -d --name "$CONTAINER_NAME" -p "${HOST_PORT}:8000" --env-file .env "$IMAGE_NAME"
 
 for _ in $(seq 1 30); do
   if curl -sf "http://localhost:${HOST_PORT}/api/health" >/dev/null 2>&1; then
