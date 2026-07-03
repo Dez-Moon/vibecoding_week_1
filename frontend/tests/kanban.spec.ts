@@ -11,40 +11,51 @@ test.beforeEach(async ({ page, context }) => {
 
 test("loads the kanban board", async ({ page }) => {
   await page.goto("/");
+  // Wait for board to load
   await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
-  await expect(page.locator('[data-testid^="column-"]')).toHaveCount(5);
+  // Verify 5 columns are visible
+  await expect(page.locator("[data-column-title]")).toHaveCount(5);
 });
 
 test("adds a card to a column", async ({ page }) => {
   await page.goto("/");
-  const firstColumn = page.locator('[data-testid^="column-"]').first();
-  await firstColumn.getByRole("button", { name: /add a card/i }).click();
-  await firstColumn.getByPlaceholder("Card title").fill("Playwright card");
-  await firstColumn.getByPlaceholder("Details").fill("Added via e2e.");
-  await firstColumn.getByRole("button", { name: /add card/i }).click();
-  await expect(firstColumn.getByText("Playwright card")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
+  // Debug: check what's in the backlog section
+  const backlogSection = page.locator("[data-column-title='Backlog']");
+  await backlogSection.waitFor({ state: "visible" });
+  const articleCount = await backlogSection.locator("article").count();
+  if (articleCount === 0) {
+    // Check if articles exist anywhere on the page
+    const totalArticles = await page.locator("article").count();
+    throw new Error(`No articles in Backlog section. Total articles on page: ${totalArticles}`);
+  }
+  // Backlog has 2 seed cards
+  await expect(backlogSection.locator("article")).toHaveCount(2);
+  await backlogSection.getByRole("button", { name: /add a card/i }).click();
+  await backlogSection.getByPlaceholder("Card title").fill("Playwright card");
+  await backlogSection.getByPlaceholder("Details").fill("Added via e2e.");
+  await backlogSection.getByRole("button", { name: /add card/i }).click();
+  // After API, Backlog should have 3 cards
+  await expect(backlogSection.locator("article")).toHaveCount(3, { timeout: 5000 });
 });
 
 test("moves a card between columns", async ({ page }) => {
   await page.goto("/");
-  const card = page.getByTestId("card-card-1");
-  const targetColumn = page.getByTestId("column-col-review");
-  const cardBox = await card.boundingBox();
-  const columnBox = await targetColumn.boundingBox();
-  if (!cardBox || !columnBox) {
-    throw new Error("Unable to resolve drag coordinates.");
-  }
-
-  await page.mouse.move(
-    cardBox.x + cardBox.width / 2,
-    cardBox.y + cardBox.height / 2
-  );
+  await expect(page.getByRole("heading", { name: "Kanban Studio" })).toBeVisible();
+  const backlogSection = page.locator("[data-column-title='Backlog']");
+  const reviewSection = page.locator("[data-column-title='Review']");
+  await backlogSection.waitFor({ state: "visible" });
+  // Review has 1 seed card
+  await expect(reviewSection.locator("article")).toHaveCount(1, { timeout: 5000 });
+  // Use mouse-based drag for @dnd-kit compatibility
+  const backlogCard = backlogSection.locator("article").first();
+  const cardBox = await backlogCard.boundingBox();
+  const reviewBox = await reviewSection.boundingBox();
+  if (!cardBox || !reviewBox) throw new Error("Unable to get bounding boxes");
+  await page.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y + cardBox.height / 2);
   await page.mouse.down();
-  await page.mouse.move(
-    columnBox.x + columnBox.width / 2,
-    columnBox.y + 120,
-    { steps: 12 }
-  );
+  await page.mouse.move(reviewBox.x + reviewBox.width / 2, reviewBox.y + reviewBox.height / 2, { steps: 10 });
   await page.mouse.up();
-  await expect(targetColumn.getByTestId("card-card-1")).toBeVisible();
+  // Review should now have 2 cards
+  await expect(reviewSection.locator("article")).toHaveCount(2, { timeout: 5000 });
 });
