@@ -29,6 +29,9 @@ RUN uv sync --no-dev
 
 COPY --from=frontend-builder /build/out /app/static
 
+# Persistent SQLite directory; map /app/data to a host volume to keep state across restarts.
+RUN mkdir -p /app/data
+
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

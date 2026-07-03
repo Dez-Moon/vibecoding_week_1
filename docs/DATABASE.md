@@ -106,9 +106,14 @@ This trades a few extra writes per move for a much simpler model: no sparse floa
 
 ## Seeding
 
-The seed runs once, on app startup, when the `users` table is empty. It inserts the demo `user` row only — no board, no columns, no cards. The user lands on an empty board and adds their own content via the API.
+The seed runs once, on app startup, when the `users` table is empty. It creates:
 
-The 5-column, 8-card demo data that ships in `frontend/src/lib/kanban.ts` (Backlog, Discovery, In Progress, Review, Done + 8 seed cards) is **not** seeded into the database. When Part 7 wires the frontend to the API, the frontend drops `initialData` and the API returns whatever the user has created. The demo's 5 columns and 8 cards become the suggested state on first run, not a hidden pre-population of the database.
+- the demo `user` row (username `user`, matching the hardcoded login),
+- one board owned by that user (titled "Kanban Studio"),
+- the five default columns — Backlog, Discovery, In Progress, Review, Done — in that order,
+- eight seed cards distributed across the columns. The titles and details mirror the `initialData` in [frontend/src/lib/kanban.ts](../frontend/src/lib/kanban.ts) so the demo experience is the same whether the frontend reads from the API or from the in-memory data it used to carry.
+
+The seed is idempotent: if the `users` table already has any row, it does nothing. The user can rename or delete the seeded columns and cards via the API.
 
 ## API surface (preview for Part 6)
 
