@@ -87,7 +87,7 @@ Cross-cutting rules:
 
 ## Part 4: Fake user sign in
 
-- [ ] Backend:
+- [x] Backend:
   - Choose session strategy. For the MVP, simplest is a signed cookie containing the username (no DB session store). Document the choice in `backend/AGENTS.md`.
   - Add `POST /api/login` accepting `{username, password}` (JSON), validating `user`/`password`, setting an HttpOnly signed cookie.
   - Add `POST /api/logout` clearing the cookie.
@@ -99,18 +99,18 @@ Cross-cutting rules:
     - Protected endpoint with cookie → 200.
     - Logout clears cookie.
   - Use a placeholder protected endpoint (e.g., `GET /api/whoami`) so tests have something to hit until Part 6.
-- [ ] Frontend:
+- [x] Frontend:
   - Add `src/app/login/page.tsx` with a form (`username`, `password`, submit). For MVP, plain HTML form is fine; the API client posts JSON.
   - Add `src/lib/auth.ts` with `login()`, `logout()`, `getCurrentUser()` helpers.
   - Add `src/lib/api.ts` — typed fetch wrapper with `credentials: 'include'`.
   - Add `src/components/AuthGate.tsx` — client component that calls `getCurrentUser()` on mount; if missing, redirects to `/login`; otherwise renders children.
   - Wrap `<KanbanBoard />` in `AuthGate` from `src/app/page.tsx`.
   - Add a logout button to the Kanban board header (or its own header component).
-- [ ] Tests (frontend unit):
+- [x] Tests (frontend unit):
   - `AuthGate` redirects to `/login` when unauthenticated.
   - `AuthGate` renders children when authenticated (mock `getCurrentUser`).
   - Login page submits to the API and navigates to `/` on success.
-- [ ] Tests (Playwright, against `npm run dev`):
+- [x] Tests (Playwright, against `npm run dev`):
   - Visiting `/` when not logged in redirects to `/login`.
   - Submitting `user`/`password` lands on `/` and shows the Kanban board.
   - Logout returns to `/login`.
@@ -142,7 +142,7 @@ Cross-cutting rules:
   - How `position` orders items within a column (sparse integers optional; tight array on write is simplest for the MVP).
   - How the demo's 5 columns and 8 seed cards map to defaults.
   - Future-proofing notes (multi-board, real auth) without committing to them.
-- [ ] Get user sign-off.
+- [x] Get user sign-off.
 
 **Tests:** N/A — design phase.
 
@@ -156,28 +156,28 @@ Cross-cutting rules:
 
 ## Part 6: Backend
 
-- [ ] Add SQLAlchemy setup in `backend/app/database.py`:
+- [x] Add SQLAlchemy setup in `backend/app/database.py`:
   - Engine bound to `DATABASE_URL` (default `sqlite:///./data/pm.db`).
   - `SessionLocal` factory.
   - `Base` from `DeclarativeBase`.
   - `get_db` dependency for FastAPI.
   - On startup: `Base.metadata.create_all(engine)` (idempotent).
   - Create `data/` directory if missing.
-- [ ] Add models in `backend/app/models.py` matching `docs/SCHEMA.json`.
-- [ ] Add Pydantic schemas in `backend/app/schemas.py` (request/response DTOs).
-- [ ] Add seeding in `backend/app/seed.py` (called from startup if no users exist):
+- [x] Add models in `backend/app/models.py` matching `docs/SCHEMA.json`.
+- [x] Add Pydantic schemas in `backend/app/schemas.py` (request/response DTOs).
+- [x] Add seeding in `backend/app/seed.py` (called from startup if no users exist):
   - Create the default `user` account (no password needed for MVP — auth is hardcoded).
   - Create one board for that user.
   - Create the 5 default columns (`Backlog`, `Discovery`, `In Progress`, `Review`, `Done`).
   - Create the 8 seed cards matching the demo (mirror `initialData` in `frontend/src/lib/kanban.ts`).
-- [ ] Implement endpoints (all require auth via `get_current_user`):
+- [x] Implement endpoints (all require auth via `get_current_user`):
   - `GET /api/board` — returns `{columns: [...], cards: {...}}` for the current user's board.
   - `PATCH /api/board` — body `{columns: [{id, title}]}` renames columns.
   - `POST /api/board/cards` — body `{column_id, title, details}` creates a card (appended to column).
   - `PATCH /api/board/cards/{id}` — body `{title?, details?}` updates a card.
   - `DELETE /api/board/cards/{id}` — deletes a card.
   - `POST /api/board/cards/{id}/move` — body `{column_id, position}` moves a card.
-- [ ] Tests in `backend/tests/`:
+- [x] Tests in `backend/tests/`:
   - `test_db_init.py`: DB is created if missing; seed data is created on first run.
   - `test_board.py`: GET board returns full structure.
   - `test_columns.py`: rename works; only allowed columns are renamed.
@@ -198,16 +198,16 @@ Cross-cutting rules:
 
 ## Part 7: Frontend + Backend
 
-- [ ] Replace frontend's in-memory data with API calls:
+- [x] Replace frontend's in-memory data with API calls:
   - Update `src/lib/api.ts` with typed methods (`getBoard`, `renameColumns`, `createCard`, `updateCard`, `deleteCard`, `moveCard`).
   - Update `src/lib/kanban.ts` — keep types and `moveCard` helper, drop `initialData` (or keep as fallback only).
-- [ ] Update `KanbanBoard.tsx`:
+- [x] Update `KanbanBoard.tsx`:
   - Load board on mount via `getBoard()`.
   - On user actions, optimistically update local state and call the API; rollback on failure with an inline error.
   - Show a loading skeleton while fetching; show an error banner if the initial load fails.
-- [ ] Update login page wiring to call `POST /api/login` and persist the cookie.
-- [ ] Update logout button to call `POST /api/logout` and redirect to `/login`.
-- [ ] Tests:
+- [x] Update login page wiring to call `POST /api/login` and persist the cookie.
+- [x] Update logout button to call `POST /api/logout` and redirect to `/login`.
+- [x] Tests:
   - Frontend unit (mock the API): board state transitions for add, edit, delete, move; rollback on failed API call.
   - Frontend E2E (Playwright) against `npm run dev` with a mocked or local backend:
     - Login flow.

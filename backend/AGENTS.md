@@ -19,14 +19,24 @@ backend/
   pyproject.toml        # uv-managed project + deps
   app/
     __init__.py
-    main.py             # FastAPI app, routes
+    main.py             # FastAPI app, routes, startup seeding
     auth.py             # Session cookie sign/verify, get_current_user dependency
+    database.py         # SQLAlchemy engine, SessionLocal, get_db dependency
+    models.py           # SQLAlchemy ORM models (User, Board, Column, Card)
+    schemas.py          # Pydantic request/response DTOs
+    board.py           # Board CRUD endpoints (columns, cards, move)
+    seed.py            # Demo data seeding (user, board, columns, cards)
+    __init__.py
   tests/
     __init__.py
-    conftest.py         # Sets SECRET_KEY for deterministic signing
+    conftest.py         # Sets SECRET_KEY and DATABASE_URL for tests
     test_health.py
     test_frontend.py
     test_auth.py
+    test_auth_required.py  # Verifies 401 on endpoints without cookie
+    test_board.py         # GET /api/board
+    test_columns.py       # PATCH /api/board column rename
+    test_cards.py         # Card CRUD + move
 ```
 
 `uv run` is used everywhere (not bare `python` or `pytest`) so the venv is consistent.

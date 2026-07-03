@@ -1,6 +1,6 @@
 # Frontend
 
-Next.js Kanban board. Built as a static export and served by the backend at `/`. Authenticated via a backend-issued signed cookie (fake `user`/`password` credential for the MVP). Board state is in React state and resets on reload — database-backed persistence lands in Part 7.
+Next.js Kanban board. Built as a static export and served by the backend at `/`. Authenticated via a backend-issued signed cookie (fake `user`/`password` credential for the MVP). Board state is persisted via the backend API — optimistic updates with rollback on failure.
 
 ## Stack
 
@@ -51,8 +51,9 @@ src/
     api.ts            # Typed fetch wrapper with credentials: 'include'
     auth.ts           # login(), logout(), getCurrentUser() helpers
     auth.test.ts      # Unit tests for the auth helpers
-    kanban.ts         # Types (Card, Column, BoardData), seed data, pure moveCard helper
+    kanban.ts         # Types (Card, Column, BoardData), pure moveCard helper
     kanban.test.ts    # Unit tests for moveCard
+    board.ts         # Typed API methods: getBoard, renameColumns, createCard, updateCard, deleteCard, moveCard
   test/
     setup.ts          # Imports @testing-library/jest-dom matchers
     vitest.d.ts       # Vitest type references
@@ -65,22 +66,22 @@ public/
 
 ## State model
 
-`src/lib/kanban.ts` defines the data shapes:
+`src/lib/kanban.ts` defines the data shapes used by the frontend:
 
 - `Card` — `{ id, title, details }`
 - `Column` — `{ id, title, cardIds: string[] }` (cards are stored by ID so order is explicit)
 - `BoardData` — `{ columns: Column[], cards: Record<string, Card> }`
 
-`initialData` provides 5 columns (`Backlog`, `Discovery`, `In Progress`, `Review`, `Done`) and 8 seed cards spread across them.
-
 `moveCard(columns, activeId, overId)` is a pure function that returns a new `Column[]` reflecting the move. It handles same-column reorder, cross-column move, and dropping onto an empty column.
 
-`createId(prefix)` generates a random ID using `Math.random` + `Date.now`.
+`createId(prefix)` generates a random ID using `Math.random` + `Date.now` (used only for temporary optimistic card IDs).
+
+Board data is fetched from the backend via `getBoard()` on mount. All mutations are optimistic — local state is updated immediately, the API is called, and on failure the previous state is restored.
 
 ## Component behavior
 
-- `KanbanBoard` owns the board state via `useState` initialized from `initialData`. It also tracks the currently-dragging card ID for the `DragOverlay`.
-- DnD uses `DndContext` with `PointerSensor` (6px activation distance) and `closestCorners` collision detection. `onDragEnd` calls `moveCard` and updates state.
+- `KanbanBoard` owns the board state via `useState` initialized from the backend API (`getBoard()`). It also tracks `activeCardId` and `overId` for the `DragOverlay` and optimistic drag rendering.
+- DnD uses `DndContext` with `PointerSensor` (6px activation distance) and `closestCorners` collision detection. `onDragEnd` calls `moveCard` locally then `apiMoveCard`; on failure the previous board state is restored.
 - Column rename is a controlled `<input>` that calls `onRename(columnId, title)` on every keystroke.
 - `NewCardForm` is collapsed by default ("Add a card" button) and expands into a title input, details textarea, and Add/Cancel buttons. Empty title submits are rejected.
 - `KanbanCard` uses `useSortable` for drag, and the delete button calls `onDelete(card.id)`.
@@ -120,4 +121,4 @@ Port 3100 was chosen to avoid conflicts with other Next.js dev servers that may 
 
 The frontend is built into `frontend/out/` and mounted at `/` by the FastAPI app via `StaticFiles(html=True)`. The Dockerfile performs this in two stages: a `node:22-slim` builder that runs `npm run build`, and a `python:3.13-slim` final image that copies `out/` to `/app/static`. API requests (`/api/health`, `/api/login`, `/api/logout`, `/api/whoami`, plus the board endpoints added in Part 6) take precedence over the static mount.
 
-API calls go through `src/lib/api.ts`, which prepends `process.env.NEXT_PUBLIC_API_BASE_URL` and sets `credentials: 'include'`. In production, the env var is unset and the frontend is same-origin with the API. In E2E and dev, the env var points at the standalone uvicorn.
+API calls go through `src/lib/api.ts` (low-level wrapper) and `src/lib/board.ts` (typed board operations). The `api.ts` wrapper prepends `process.env.NEXT_PUBLIC_API_BASE_URL` and sets `credentials: 'include'`. In production, the env var is unset and the frontend is same-origin with the API. In E2E and dev, the env var points at the standalone uvicorn.
