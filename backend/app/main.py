@@ -117,9 +117,8 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
         return {"username": payload.username}
 
     @app.post("/api/logout", status_code=204)
-    def logout(response: Response) -> Response:
+    def logout(response: Response) -> None:
         clear_session_cookie(response)
-        return Response(status_code=204)
 
     @app.get("/api/whoami")
     def whoami(username: str = Depends(get_current_user)) -> dict[str, str]:

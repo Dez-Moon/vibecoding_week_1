@@ -67,6 +67,14 @@ def create_session_cookie(response: Response, username: str) -> None:
 
 def clear_session_cookie(response: Response) -> None:
     response.delete_cookie(key=SESSION_COOKIE, path="/")
+    response.headers["set-cookie"] = (
+        f"{SESSION_COOKIE}=; "
+        "expires=Thu, 01 Jan 1970 00:00:00 GMT; "
+        "Max-Age=0; "
+        "Path=/; "
+        "HttpOnly; "
+        "SameSite=lax"
+    )
 
 
 def read_session(request: Request) -> str | None:

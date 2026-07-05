@@ -1,16 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-import { login } from "@/lib/auth";
+import { getCurrentUser, login } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    getCurrentUser()
+      .then((user) => {
+        if (user) {
+          router.replace("/board");
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch(() => setChecking(false));
+  }, [router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -25,6 +39,10 @@ export default function LoginPage() {
       setSubmitting(false);
     }
   };
+
+  if (checking) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--surface-muted)] px-6">
@@ -85,6 +103,16 @@ export default function LoginPage() {
         >
           {submitting ? "Signing in…" : "Sign in"}
         </button>
+
+        <p className="mt-4 text-center text-sm text-[var(--gray-text)]">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="font-medium text-[var(--primary-indigo)] hover:underline"
+          >
+            Sign up
+          </Link>
+        </p>
       </form>
     </div>
   );
