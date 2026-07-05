@@ -18,6 +18,20 @@ export async function login(username: string, password: string): Promise<Current
   }
 }
 
+export async function register(username: string, password: string): Promise<CurrentUser> {
+  try {
+    return await apiFetch<CurrentUser>("/api/register", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409) {
+      throw new Error("Username already taken");
+    }
+    throw error;
+  }
+}
+
 export async function logout(): Promise<void> {
   try {
     await apiFetch<null>("/api/logout", { method: "POST" });

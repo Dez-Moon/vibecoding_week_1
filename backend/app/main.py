@@ -1,4 +1,5 @@
 from pathlib import Path
+import uuid
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,7 @@ from app.auth import (
     clear_session_cookie,
     create_session_cookie,
     get_current_user,
+    hash_password,
     validate_credentials,
 )
 from app.seed import seed_if_empty
@@ -25,6 +27,11 @@ DEV_ORIGINS = [
 
 
 class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
     username: str
     password: str
 
@@ -57,6 +64,55 @@ def create_app(static_dir: Path | None = None) -> FastAPI:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid credentials",
             )
+        create_session_cookie(response, payload.username)
+        return {"username": payload.username}
+
+    @app.post("/api/register")
+    def register(
+        payload: RegisterRequest,
+        response: Response,
+        db: Session = Depends(database.get_db),
+    ) -> dict[str, str]:
+        from sqlalchemy import select
+        from app import models
+
+        existing = db.execute(
+            select(models.User).where(models.User.username == payload.username)
+        ).scalar_one_or_none()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Username already taken",
+            )
+
+        user = models.User(
+            id=str(uuid.uuid4()),
+            username=payload.username,
+            password_hash=hash_password(payload.password),
+        )
+        db.add(user)
+        db.flush()
+
+        board = models.Board(
+            id=str(uuid.uuid4()),
+            user_id=user.id,
+            title="My Board",
+        )
+        db.add(board)
+        db.flush()
+
+        default_columns = ["Backlog", "In Progress", "Done"]
+        for i, title in enumerate(default_columns):
+            db.add(
+                models.Column(
+                    id=str(uuid.uuid4()),
+                    board_id=board.id,
+                    title=title,
+                    position=i,
+                )
+            )
+        db.commit()
+
         create_session_cookie(response, payload.username)
         return {"username": payload.username}
 

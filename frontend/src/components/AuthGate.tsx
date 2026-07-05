@@ -23,7 +23,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       if (result) {
         setUser(result);
       } else {
-        router.replace("/login");
+        router.replace("/");
       }
       setResolved(true);
     });

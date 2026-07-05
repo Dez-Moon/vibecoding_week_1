@@ -1,8 +1,10 @@
 import logging
 import os
+import secrets
 
 from fastapi import Depends, HTTPException, Request, Response, status
 from itsdangerous import BadSignature, URLSafeSerializer
+from passlib.hash import bcrypt
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +27,31 @@ def _signer() -> URLSafeSerializer:
     return URLSafeSerializer(_secret_key(), salt=SALT)
 
 
-def validate_credentials(username: str, password: str) -> bool:
+def _legacy_check(username: str, password: str) -> bool:
     return username == "user" and password == "password"
+
+
+def validate_credentials(username: str, password: str) -> bool:
+    from app.database import get_session_factory
+    from sqlalchemy import select
+    from app.models import User
+
+    if _legacy_check(username, password):
+        return True
+
+    db = get_session_factory()()
+    try:
+        stmt = select(User).where(User.username == username)
+        user = db.execute(stmt).scalar_one_or_none()
+        if user is None:
+            return False
+        return bcrypt.verify(password, user.password_hash)
+    finally:
+        db.close()
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hash(password)
 
 
 def create_session_cookie(response: Response, username: str) -> None:
