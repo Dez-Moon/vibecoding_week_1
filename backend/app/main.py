@@ -23,6 +23,8 @@ STATIC_DIR = Path("/app/static")
 DEV_ORIGINS = [
     "http://127.0.0.1:3100",
     "http://localhost:3100",
+    "https://frontend-54r4k6lc7-dezmoons-projects.vercel.app",
+    "https://*.vercel.app",
 ]
 
 
