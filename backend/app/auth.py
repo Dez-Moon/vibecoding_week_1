@@ -67,20 +67,22 @@ def create_session_cookie(response: Response, username: str) -> None:
         key=SESSION_COOKIE,
         value=token,
         httponly=True,
-        samesite="lax",
+        samesite="none",
+        secure=True,
         path="/",
     )
 
 
 def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(key=SESSION_COOKIE, path="/")
+    response.delete_cookie(key=SESSION_COOKIE, path="/", samesite="none", secure=True)
     response.headers["set-cookie"] = (
         f"{SESSION_COOKIE}=; "
         "expires=Thu, 01 Jan 1970 00:00:00 GMT; "
         "Max-Age=0; "
         "Path=/; "
         "HttpOnly; "
-        "SameSite=lax"
+        "SameSite=none; "
+        "Secure"
     )
 
 
