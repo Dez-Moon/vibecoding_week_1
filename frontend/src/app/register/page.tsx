@@ -1,17 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { register } from "@/lib/auth";
+import { getCurrentUser, register } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const [checking, setChecking] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    getCurrentUser()
+      .then((user) => {
+        if (user) {
+          router.replace("/board");
+        } else {
+          setChecking(false);
+        }
+      })
+      .catch(() => setChecking(false));
+  }, [router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,6 +39,10 @@ export default function RegisterPage() {
       setSubmitting(false);
     }
   };
+
+  if (checking) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--surface-muted)] px-6">
@@ -48,6 +65,7 @@ export default function RegisterPage() {
             type="text"
             autoComplete="username"
             required
+            minLength={1}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="mt-1 block w-full rounded-lg border border-[var(--stroke)] bg-[var(--surface)] px-3 py-2 text-[var(--dark-slate)] outline-none focus:border-[var(--primary-indigo)]"
@@ -81,7 +99,7 @@ export default function RegisterPage() {
         <button
           data-testid="submit-register"
           type="submit"
-          disabled={submitting}
+          disabled={submitting || username.trim().length === 0 || password.length < 4}
           className="mt-6 block w-full rounded-lg bg-[var(--secondary-cyan)] px-4 py-2 font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {submitting ? "Creating account…" : "Create account"}

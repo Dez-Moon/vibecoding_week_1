@@ -4,7 +4,7 @@ import secrets
 
 from fastapi import Depends, HTTPException, Request, Response, status
 from itsdangerous import BadSignature, URLSafeSerializer
-from passlib.hash import bcrypt
+import bcrypt
 
 logger = logging.getLogger(__name__)
 
@@ -45,13 +45,20 @@ def validate_credentials(username: str, password: str) -> bool:
         user = db.execute(stmt).scalar_one_or_none()
         if user is None:
             return False
-        return bcrypt.verify(password, user.password_hash)
+        if user.password_hash is None:
+            return False
+        return bcrypt.checkpw(
+            password.encode("utf-8"),
+            user.password_hash.encode("utf-8")
+        )
     finally:
         db.close()
 
 
 def hash_password(password: str) -> str:
-    return bcrypt.hash(password)
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed.decode("utf-8")
 
 
 def create_session_cookie(response: Response, username: str) -> None:
